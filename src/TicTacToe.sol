@@ -1,12 +1,12 @@
 //// SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
 
-// import "openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
-// import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
-// import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "openzeppelin-contracts-upgradeable/contracts/utils/MulticallUpgradeable.sol";
 
-
-contract TicTacToe /*is Initializable, OwnableUpgradeable, UUPSUpgradeable */ {
+contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, UUPSUpgradeable {
 
     uint256 internal constant HR1P1M = 21;     //0b 00 00 00 00 00 00 01 01 01
     uint256 internal constant HR2P1M = 1344;   //0b 00 00 00 01 01 01 00 00 00
@@ -117,7 +117,7 @@ contract TicTacToe /*is Initializable, OwnableUpgradeable, UUPSUpgradeable */ {
         } 
         uint256 gameSetup = currentGame.gameSetup;
         unchecked {
-            for(uint256  i= 0; i<9; i++){
+            for(uint256  i= 0; i<9; ++i){
                 //get only the last two digit 3 => 11
                 if((gameSetup & 3) == 0) {
                     games[_game] = currentGame;
@@ -171,18 +171,19 @@ contract TicTacToe /*is Initializable, OwnableUpgradeable, UUPSUpgradeable */ {
         return loadGame(_game).gameSetup;
     }
 
-    // constructor() {
-    //     _disableInitializers();
-    // }
+    constructor() {
+        _disableInitializers();
+    }
 
-    // function initialize(address initialOwner) initializer public {
-    //     __Ownable_init(initialOwner);
-    //     __UUPSUpgradeable_init();
-    // }
+    function initialize(address initialOwner) initializer public {
+        __Ownable_init(initialOwner);
+        __Multicall_init();
+        __UUPSUpgradeable_init();
+    }
 
-    // function _authorizeUpgrade(address newImplementation)
-    //     internal
-    //     onlyOwner
-    //     override
-    // {}
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        onlyOwner
+        override
+    {}
 }
