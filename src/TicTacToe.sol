@@ -110,14 +110,15 @@ contract TicTacToe /*is Initializable, OwnableUpgradeable, UUPSUpgradeable */ {
             else if(currentGame.gameSetup & DLRP2M == DLRP2M) currentGame.gameSetup = setP2Winner(currentGame.gameSetup);
             else if(currentGame.gameSetup & DRLP2M == DRLP2M) currentGame.gameSetup = setP2Winner(currentGame.gameSetup);
         }
-
+        GameState state = gameState(currentGame.gameSetup);
+        if(state != GameState.InProgress) return state;
         uint256 gameSetup = currentGame.gameSetup;
         unchecked {
             for(uint256  i= 0; i<9; i++){
                 //get only the last two digit 3 => 11
                 if((gameSetup & 3) == 0) {
                     games[_game] = currentGame;
-                    return getGameState(currentGame.gameSetup);
+                    return state;
                 }
                 gameSetup = gameSetup >> 2;
             }
@@ -125,7 +126,7 @@ contract TicTacToe /*is Initializable, OwnableUpgradeable, UUPSUpgradeable */ {
         currentGame.gameSetup = setDraw(currentGame.gameSetup);
 
         games[_game] = currentGame;
-        return getGameState(currentGame.gameSetup);
+        return GameState.Draw;
     }
 
     function setP1Winner(uint256 _gameSetup) private pure returns (uint256) {
@@ -161,6 +162,10 @@ contract TicTacToe /*is Initializable, OwnableUpgradeable, UUPSUpgradeable */ {
         require(gameState(currentGame.gameSetup) == GameState.Open,"This game does not accept new players at this time");
         currentGame.gameSetup = currentGame.gameSetup | (1 << 21);
         games[_game] = currentGame;
+    }
+
+    function getBoard(uint256 _game) public view returns (uint256){
+        return loadGame(_game).gameSetup;
     }
 
     // constructor() {
