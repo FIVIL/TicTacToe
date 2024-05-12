@@ -111,7 +111,10 @@ contract TicTacToe /*is Initializable, OwnableUpgradeable, UUPSUpgradeable */ {
             else if(currentGame.gameSetup & DRLP2M == DRLP2M) currentGame.gameSetup = setP2Winner(currentGame.gameSetup);
         }
         GameState state = gameState(currentGame.gameSetup);
-        if(state != GameState.InProgress) return state;
+        if(state != GameState.InProgress){
+            games[_game] = currentGame;
+            return state;
+        } 
         uint256 gameSetup = currentGame.gameSetup;
         unchecked {
             for(uint256  i= 0; i<9; i++){
