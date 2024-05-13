@@ -35,3 +35,23 @@ The contract allows any user willing to pay the gas fees to initiate a game and 
 After each turn, the code checks for a winner or a draw. To check for a winner, the contract uses 18 different bitmasks to evaluate all possible winning scenarios. If none of the winning scenarios match, the contract checks if the board is full, indicating a draw.
 
 The game ends when a winner is found or when the board is full, resulting in a draw.
+
+# V2
+
+The second version of the game offers several new features:
+
+### Jack Pot
+A jack pot enabling the users to bet, in this scenario if the first player puts a bet while creating the game, the 2nd player also has to call the first player betting the same amount of ether, finally at the end of the game the winner takes all the winnings after paying a 10% fee to the contract. 
+
+If no winner is found and the game results in a draw each of the players will receive their original bet minus the contract fee.
+
+### DOS Protection
+
+In order to prevent players from simply not playing their turns if they know their lost is certain, a mechanism have been implemented to automatically nominate the other player as winner after certain number of blocks have been mined. This number of blocks is configurable while creating a new game.
+
+### Front Running Protection
+
+Imagine a scenario when the first player submits a move and then the second player submits their move in the same block, in this scenario the first player can potentially front run their own original transaction and play a more favorable move knowing the second player's move. In order to prevent such attacks, game logic makes sure that only 1 move is allowed per block for each game.
+
+
+
