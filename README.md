@@ -131,6 +131,7 @@ We have provided 23 different unit tests for this contract to achieve 81% test c
 | src/TicTacToeV2.sol | 72.67% (109/150) | 69.66% (163/234) | 48.18% (53/110)  | 77.27% (17/22) |
 | Total               | 81.58% (186/228) | 77.05% (282/366) | 60.23% (106/176) | 80.56% (29/36) |
 
+
 ### Upgradeability
 
 Adding upgradeability can potentially increase the attack surface of the contract, specially if the developers do not know how the patterns work under the hood and what functions are involved.
@@ -142,3 +143,17 @@ In order to add upgradeability to this game we have taken advantage of OpenZeppe
 2. **authorizeUpgrade**: The UUPS proxy pattern calls for having this function in all the implementation contracts in order to be able to upgrade them later on. Lack of proper access control enforcement for this function can create a huge vulnerability and enable anyone to upgrade the contract to the implementation of their choosing potentially stealing everything. Also, lack of this function can remove the upgradeability functionality marking that implementation final.
 
 3. **Storage Collisions**: This problem might not be obvious at first cite and **many** developers make mistakes in this regard while implementing their first couple of upgradable contracts. Under the hood all the state variables are going throw binary serialization and then solidity concatenates them together to create the contract storage. Although, very efficient this methods lacks structure that is typically present in other methods of data storage such as json. Without schema, once you make changes to the order of the variables solidity can't track the changes and will end up deserializing wrong values in wrong variables. Therefore, it is very important to make sure storage variables are **ordered** the same across multiple virions of the same contract. Addiotnally, it is highly advised to leave some empty space at the end of the store variables for the potential new storage variables in future virions. Both of these practices have been followed in both versions of TicTacToe game. The storage gap is defined via ```uint256[100] ______gap;``` in the V1 contract.
+
+
+# Deployment
+
+Considering the sensitivity of smart contracts deploying them requires extra caution.
+
+1. **Multi-Sig wallet**: Considering using multi signature wallets (such as 3 out 5) wallet while deploying important smart contracts to make sure leakage of one private key won't result in a disaster. 
+
+2. **Immutability**: Blockchain is immutable and if an smart contract is deployed with wrong values in constructor or initializer it might have devastating affects since there might not be a way to change them.
+
+3. **Initializer**: While deploying upgradable contracts it is important to pay attention to their initializers. Unlike constructors, initializers are functions, which means they won't be called during contract deployment. Failure to call the initializer during deployment or upgrading the contract can result in malicious actors taking control over the contract by calling the initializer before the actual contract owner. The best way to deploy these sort of contracts is to take advantage of tools like ```hardhat``` and ```forge``` to call the initializer right after contract deployment via the same transaction to make it impossible for anyone else to call it before contract owner or front run the owner.
+
+
+# Maintenance and Monitoring 
