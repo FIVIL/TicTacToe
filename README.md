@@ -85,7 +85,6 @@ To understand the potential attack surface of the contract, we first need to ide
 
 In this section we will explore the auditing process that can be used to find this contract and other contracts vulnerabilities, the audit methodology discussed below is simply a personal methodology of the author of this work.
 
-### First Review
 The first step toward a successful audit comes from a deep understanding of the code, my personal method consists of reviewing all the provided documentations by the developers and then diving deep into the code and matching the sections of the documents with the code in order to grasp a complete understanding of the code.
 
 Taking this code as an example, the most complicated part of the code are parts of the code about bit packing and compressing all the state variables in a single **uint256** and performing various unintuitive boolean operations on top of it to store and read the states.
@@ -99,5 +98,23 @@ Consider the example below from the ```src/TicTacToeV2.sol:L184~187```. What are
     }
 ```
 
+Using ```chisel``` and creating a several example with different values will reveal that this code is trying to see if the 186th bit is equal to 0.
 
+At this stage after being able to understand the logic of the contract we can start looking for vulnerabilities and bugs. My personal favorite method is to first try and find as many potential vulnerability as possible and then use a comprehensive checklist such as (solodit)[https://solodit.xyz/checklist] to find all other potential vulnerabilities. During this stage I tend to put my findings around the code in comment, or better yet GitHub review comments if possible.
+
+Although Solidity contracts does not have an exact entrypoint like Solana contracts still determining public and external functions and starting with them can be helpful.
+
+After several rounds of checking and making sure I have found all the vulnerabilities that I could I start the POC phase. At very beginning of this phase I will check the provided tests and then I will try to write several tests for each of the complicated findings to make sure they are valid. Finally, I will start documenting the findings and determining their severity based on the fact that if they can put funds directly in danger or not.
+
+### Possible Vulnerability of this Contract
+
+This contract can have several potential vulnerabilities:
+
+1. **DOS**: As explained above players might abstain from making their moves if they know they will lose and basically make the contract deny service to the other player. In order to address this issue **TicTacToeV2** enables the other user to unilaterally win if one of the players abstain for certain number of blocks.
+
+2. **Front Running**: Players might try to front run their own transaction after seeing other players transaction. To prevent this issue **TicTacToeV2**: enforces one move per block rule.
+
+3. **Reentrancy**: The withdraw function could be reentrant in this contract considering the external calls. However, making sure that the state variables are being updated before the call nullifies this attack for this contract.
+
+> The contract also takes advantage of *Checks-Effects-Interactions Pattern* to prevent any potential unexpected behavior. 
 
