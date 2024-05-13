@@ -8,28 +8,33 @@ import "openzeppelin-contracts-upgradeable/contracts/utils/MulticallUpgradeable.
 
 contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, UUPSUpgradeable {
 
-    uint256 internal constant HR1P1M = 21;     //0b 00 00 00 00 00 00 01 01 01
-    uint256 internal constant HR2P1M = 1344;   //0b 00 00 00 01 01 01 00 00 00
-    uint256 internal constant HR3P1M = 86016;  //0b 01 01 01 00 00 00 00 00 00
-    uint256 internal constant HR1P2M = 42;     //0b 00 00 00 00 00 00 10 10 10
-    uint256 internal constant HR2P2M = 2688;   //0b 00 00 00 10 10 10 00 00 00
-    uint256 internal constant HR3P2M = 172032; //0b 10 10 10 00 00 00 00 00 00
+    uint256 public constant HR1P1M = 21;     //0b 00 00 00 00 00 00 01 01 01
+    uint256 public constant HR2P1M = 1344;   //0b 00 00 00 01 01 01 00 00 00
+    uint256 public constant HR3P1M = 86016;  //0b 01 01 01 00 00 00 00 00 00
+    uint256 public constant HR1P2M = 42;     //0b 00 00 00 00 00 00 10 10 10
+    uint256 public constant HR2P2M = 2688;   //0b 00 00 00 10 10 10 00 00 00
+    uint256 public constant HR3P2M = 172032; //0b 10 10 10 00 00 00 00 00 00
 
-    uint256 internal constant VC1P1M = 66576;  //0b 01 00 00 01 00 00 01 00 00
-    uint256 internal constant VC2P1M = 16644;  //0b 00 01 00 00 01 00 00 01 00
-    uint256 internal constant VC3P1M = 4161;   //0b 00 00 01 00 00 01 00 00 01
-    uint256 internal constant VC1P2M = 133152; //0b 10 00 00 10 00 00 10 00 00
-    uint256 internal constant VC2P2M = 33288;  //0b 00 10 00 00 10 00 00 10 00
-    uint256 internal constant VC3P2M = 8322;   //0b 00 00 10 00 00 10 00 00 10
+    uint256 public constant VC1P1M = 66576;  //0b 01 00 00 01 00 00 01 00 00
+    uint256 public constant VC2P1M = 16644;  //0b 00 01 00 00 01 00 00 01 00
+    uint256 public constant VC3P1M = 4161;   //0b 00 00 01 00 00 01 00 00 01
+    uint256 public constant VC1P2M = 133152; //0b 10 00 00 10 00 00 10 00 00
+    uint256 public constant VC2P2M = 33288;  //0b 00 10 00 00 10 00 00 10 00
+    uint256 public constant VC3P2M = 8322;   //0b 00 00 10 00 00 10 00 00 10
 
-    uint256 internal constant DLRP1M = 65793;  //0b 01 00 00 00 01 00 00 00 01
-    uint256 internal constant DLRP2M = 131586; //0b 10 00 00 00 10 00 00 00 10
+    uint256 public constant DLRP1M = 65793;  //0b 01 00 00 00 01 00 00 00 01
+    uint256 public constant DLRP2M = 131586; //0b 10 00 00 00 10 00 00 00 10
 
-    uint256 internal constant DRLP1M = 4368;  //0b 00 00 01 00 01 00 01 00 00
-    uint256 internal constant DRLP2M = 8736;  //0b 00 00 10 00 10 00 10 00 00
+    uint256 public constant DRLP1M = 4368;  //0b 00 00 01 00 01 00 01 00 00
+    uint256 public constant DRLP2M = 8736;  //0b 00 00 10 00 10 00 10 00 00
 
     enum GameState { Open, InProgress, /*Completed states:*/ P1Victory, P2Victory, Draw }
 
+    //Game Board stracture
+    // # 2 1 0
+    // 0 - - -
+    // 1 - - -
+    // 2 - - -
     struct Game {
         uint256 gameSetup;
         address P1;
@@ -38,6 +43,7 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
 
     mapping (uint256 => Game) games;
     uint256 public gameCounter = 0;
+    uint256[100] ______gap;
 
     function loadGame(uint256 _game) private view  returns (Game memory){
         Game memory currentGame = games[_game];
@@ -81,8 +87,7 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
         }
     }
 
-    event moved(uint256 _game, uint8 _x, uint8 _y, bool _p1,GameState result);
-    event gameFinished(uint256 _game, address _winner);
+    event gameFinished(uint256 indexed _game, address _winner);
     function Move(uint256 _game, uint8 _x, uint8 _y) public returns (GameState) {
         uint256 move = _y * 3 + _x;  
         require(_x < 3, "Invalid Move.");
@@ -117,14 +122,13 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
             else if(currentGame.gameSetup & DLRP2M == DLRP2M) currentGame.gameSetup = setP2Winner(currentGame.gameSetup);
             else if(currentGame.gameSetup & DRLP2M == DRLP2M) currentGame.gameSetup = setP2Winner(currentGame.gameSetup);
         }
+
         GameState state = gameState(currentGame.gameSetup);
         if(state != GameState.InProgress){
-            emit moved(_game,_x,_y, p1Turn, state);
-            games[_game] = currentGame;
-            return state;
-        } else {
             if(state == GameState.P1Victory) emit gameFinished(_game, currentGame.P1);
             if(state == GameState.P2Victory) emit gameFinished(_game, currentGame.P2);
+            games[_game] = currentGame;
+            return state;
         }
         uint256 gameSetup = currentGame.gameSetup;
         unchecked {
@@ -132,7 +136,6 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
                 //get only the last two digit 3 => 11
                 if((gameSetup & 3) == 0) {
                     games[_game] = currentGame;
-                    emit moved(_game,_x,_y, p1Turn, state);
                     return state;
                 }
                 gameSetup = gameSetup >> 2;
@@ -142,7 +145,6 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
         currentGame.gameSetup = setDraw(currentGame.gameSetup);
         emit gameFinished(_game, address(0));
         games[_game] = currentGame;
-        emit moved(_game,_x,_y, p1Turn, state);
         return GameState.Draw;
     }
 
@@ -158,7 +160,7 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
         return (_gameSetup | (1 << 19)) | (1 << 20);
     }
 
-    event newGame(uint256 _game, address _p1, address _p2);
+    event newGame(uint256 indexed _game, address _p1, address _p2);
     function openNewGame(address _p2) public returns(uint256 gameId){
         //require(msg.sender != _p2, "You can't invite yourself to play");
 
@@ -174,18 +176,14 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
         
     }
 
-    event playerJoined(uint256 _game);
+    event playerJoined(uint256 indexed _game);
     function acceptInvite(uint256 _game) public{
         Game memory currentGame = loadGame(_game);
-        require(currentGame.P2 == msg.sender,"You can't join this game");
-        require(gameState(currentGame.gameSetup) == GameState.Open,"This game does not accept new players at this time");
+        require(currentGame.P2 == msg.sender,"You can't join this game.");
+        require(gameState(currentGame.gameSetup) == GameState.Open,"This game does not accept new players at this time.");
         currentGame.gameSetup = currentGame.gameSetup | (1 << 21);
         games[_game] = currentGame;
         emit playerJoined(_game);
-    }
-
-    constructor() {
-        _disableInitializers();
     }
 
     function initialize() initializer public {
