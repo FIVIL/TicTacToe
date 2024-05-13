@@ -53,5 +53,8 @@ In order to prevent players from simply not playing their turns if they know the
 
 Imagine a scenario when the first player submits a move and then the second player submits their move in the same block, in this scenario the first player can potentially front run their own original transaction and play a more favorable move knowing the second player's move. In order to prevent such attacks, game logic makes sure that only 1 move is allowed per block for each game.
 
+# How To Run
 
+In order to run the game and tests, you need to use **foundry**. 
 
+After cloning the repo and installing the tool, simple run ```forge build``` and ```forge test``` to see the results.
