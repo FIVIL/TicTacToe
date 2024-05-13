@@ -157,3 +157,7 @@ Considering the sensitivity of smart contracts deploying them requires extra cau
 
 
 # Maintenance and Monitoring 
+
+Although upgradeability of smart contracts provide a way for future maintenance it can be a double edged sword as adding a new feature to a stable protocol via upgradeability pattern can break it and open it to attacks. Therefore, it is very important to have each new version go through vigorous testing and auditing before deployment.
+
+Monitoring smart contracts events and transactions through block explorers such as etherscan can help developers make sure there is nothing wrong with their contracts and no one is abusing them, or at least alert them about potential malicious actions before it's too late. Lot's of attacks in the DeFi ecosystem happen in several transactions repeating the same action, a good monitoring strategy can potentially save a huge loss by preventing the attacks after the first transaction. Perhaps an amazing scenario would be to monitor transaction pool for malicious transactions targeting your contracts and once you detected them front run them and prevent them.
