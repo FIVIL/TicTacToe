@@ -112,9 +112,21 @@ This contract can have several potential vulnerabilities:
 
 1. **DOS**: As explained above players might abstain from making their moves if they know they will lose and basically make the contract deny service to the other player. In order to address this issue **TicTacToeV2** enables the other user to unilaterally win if one of the players abstain for certain number of blocks.
 
-2. **Front Running**: Players might try to front run their own transaction after seeing other players transaction. To prevent this issue **TicTacToeV2**: enforces one move per block rule.
+2. **Front Running**: Players might try to front run their own transaction after seeing other players transaction. To prevent this issue **TicTacToeV2** enforces one move per block rule.
 
 3. **Reentrancy**: The withdraw function could be reentrant in this contract considering the external calls. However, making sure that the state variables are being updated before the call nullifies this attack for this contract.
 
 > The contract also takes advantage of *Checks-Effects-Interactions Pattern* to prevent any potential unexpected behavior. 
 
+4. **Logic**: The logic of the contract could suffer from several vulnerabilities as explored in the beginning of the security section. However, all of these scenarios have been mitigated and the contract have been tested against them.
+
+### Unit testing
+
+Tests can be a great tool to make sure the contract logic works as expected and no vulnerabilities can be found.
+We have provided 23 different unit tests for this contract to achieve 81% test coverage. However, considering that many of the v1 tests can be also used for v2 the actual coverage is higher.
+
+| File                | % Lines          | % Statements     | % Branches       | % Funcs        |
+|---------------------|------------------|------------------|------------------|----------------|
+| src/TicTacToe.sol   | 98.72% (77/78)   | 90.15% (119/132) | 80.30% (53/66)   | 85.71% (12/14) |
+| src/TicTacToeV2.sol | 72.67% (109/150) | 69.66% (163/234) | 48.18% (53/110)  | 77.27% (17/22) |
+| Total               | 81.58% (186/228) | 77.05% (282/366) | 60.23% (106/176) | 80.56% (29/36) |
