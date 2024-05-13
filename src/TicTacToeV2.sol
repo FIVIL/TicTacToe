@@ -43,9 +43,11 @@ contract TicTacToeV2 is Initializable, OwnableUpgradeable, MulticallUpgradeable,
 
     mapping (uint256 => Game) games;
     uint256 public gameCounter = 0;
+    uint256 public fees = 0;
+    uint256 public constant jackPotMask = 0xFFFFFFFFFFFFFFFFFFFFFF;
     uint256 public constant blockNumberMask = 0xFFFFFFFFF;
     uint256 public constant blockOffsetMask = 0xFFFFF;
-    uint256[98] ______gap;
+    uint256[96] ______gap;
 
     function loadGame(uint256 _game) private view  returns (Game memory){
         Game memory currentGame = games[_game];
@@ -171,14 +173,27 @@ contract TicTacToeV2 is Initializable, OwnableUpgradeable, MulticallUpgradeable,
         return (_gameSetup & (blockNumberMask << 44)) >> 44;
     }
 
+    function getJackPotValue(uint256 _gameSetup) private pure returns (uint256){
+        return (_gameSetup & (jackPotMask << 84)) >> 84;
+    }
+
+    function p1Withdrawed(uint256 _gameSetup) private pure returns (bool){
+        return ((_gameSetup & (1 << 184)) >> 184) == 0;
+    }
+
+    function p2Withdrawed(uint256 _gameSetup) private pure returns (bool){
+        return ((_gameSetup & (1 << 185)) >> 185) == 0;
+    }
+
+
     event newGame(uint256 indexed _game, address _p1, address _p2);
-    function openNewGame(address _p2, uint256 blockOffset) public returns(uint256 gameId){
+    function openNewGame(address _p2, uint256 blockOffset) public payable returns(uint256 gameId){
         //require(msg.sender != _p2, "You can't invite yourself to play");
 
         bool p1O = (uint256(keccak256(abi.encodePacked(msg.sender, _p2))) & 1) == 0;    
         uint256 emptyGame = (1 << 22); 
         uint256 setup = p1O ? emptyGame | (1 << 18) : emptyGame;
-        Game memory g = Game((setup | (blockOffset << 23) | (block.number << 44) ) , msg.sender, _p2);
+        Game memory g = Game((setup | (blockOffset << 23) | (block.number << 44) | (msg.value << 84 )  | (1 << 184) | (1 << 185)) , msg.sender, _p2);
         games[gameCounter] = g;
         gameId = gameCounter;
         emit newGame(gameId, msg.sender, _p2);
@@ -189,10 +204,11 @@ contract TicTacToeV2 is Initializable, OwnableUpgradeable, MulticallUpgradeable,
     }
 
     event playerJoined(uint256 indexed _game);
-    function acceptInvite(uint256 _game) public{
+    function acceptInvite(uint256 _game) public payable{
         Game memory currentGame = loadGame(_game);
         require(currentGame.P2 == msg.sender,"You can't join this game.");
         require(gameState(currentGame.gameSetup) == GameState.Open,"This game does not accept new players at this time.");
+        require(getJackPotValue(currentGame.gameSetup) == msg.value, "You need to call the game initiator bet.");
         currentGame.gameSetup = currentGame.gameSetup | (1 << 21);
         games[_game] = currentGame;
         emit playerJoined(_game);
@@ -214,6 +230,67 @@ contract TicTacToeV2 is Initializable, OwnableUpgradeable, MulticallUpgradeable,
             return state;
         }
         return GameState.InProgress;
+    }
+
+    function withdrawJackpot(uint256 _game) public returns(bool) {
+        Game memory currentGame = loadGame(_game);
+        GameState state = gameState(currentGame.gameSetup);
+        uint256 jackPot = getJackPotValue(currentGame.gameSetup);
+        if(state == GameState.P1Victory && msg.sender == currentGame.P1) {
+            require(!p1Withdrawed(currentGame.gameSetup), "You have already withdrawn your funds.");
+            jackPot = jackPot * 2;
+            uint256 gameFee = jackPot / 10;
+            fees = fees + gameFee;
+            jackPot = jackPot - gameFee;
+            currentGame.gameSetup = currentGame.gameSetup ^ (1 << 184);
+            games[_game] = currentGame;
+            (bool success, ) = payable(msg.sender).call{value: jackPot}("");
+            require(success, "Failed to send Ether to the winner");
+            return true;
+        } else if (state == GameState.P2Victory && msg.sender == currentGame.P2){
+            require(!p2Withdrawed(currentGame.gameSetup), "You have already withdrawn your funds.");
+            jackPot = jackPot * 2;
+            uint256 gameFee = jackPot / 10;
+            fees = fees + gameFee;
+            jackPot = jackPot - gameFee;
+            currentGame.gameSetup = currentGame.gameSetup ^ (1 << 185);
+            games[_game] = currentGame;
+            (bool success, ) = payable(msg.sender).call{value: jackPot}("");
+            require(success, "Failed to send Ether to the winner");
+            return true;
+        } else if(state == GameState.Draw) {
+            if(msg.sender == currentGame.P1) {
+                require(!p1Withdrawed(currentGame.gameSetup), "You have already withdrawn your funds.");
+                uint256 gameFee = jackPot / 10;
+                fees = fees + gameFee;
+                jackPot = jackPot - gameFee;
+                currentGame.gameSetup = currentGame.gameSetup ^ (1 << 184);
+                games[_game] = currentGame;
+                (bool success, ) = payable(msg.sender).call{value: jackPot}("");
+                require(success, "Failed to send Ether to the winner");
+                return true;
+            }
+            if(msg.sender == currentGame.P2) {
+                require(!p2Withdrawed(currentGame.gameSetup), "You have already withdrawn your funds.");
+                uint256 gameFee = jackPot / 10;
+                fees = fees + gameFee;
+                jackPot = jackPot - gameFee;
+                currentGame.gameSetup = currentGame.gameSetup ^ (1 << 185);
+                games[_game] = currentGame;
+                (bool success, ) = payable(msg.sender).call{value: jackPot}("");
+                require(success, "Failed to send Ether to the winner");
+                return true;
+            }
+        }
+
+        revert("You can't withdraw.");
+    }
+
+    function withdrawFees() external onlyOwner {
+        uint256 feesToSend = fees;
+        fees = 0;
+        (bool success, ) = payable(owner()).call{value: feesToSend}("");
+        require(success, "Failed to send Ether to the owner");
     }
 
     function initialize() initializer public {
