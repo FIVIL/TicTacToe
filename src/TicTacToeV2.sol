@@ -43,8 +43,9 @@ contract TicTacToeV2 is Initializable, OwnableUpgradeable, MulticallUpgradeable,
 
     mapping (uint256 => Game) games;
     uint256 public gameCounter = 0;
-    uint256 public usedGap = 1;
-    uint256[99] ______gap;
+    uint256 public constant blockNumberMask = 0xFFFFFFFFF;
+    uint256 public constant blockOffsetMask = 0xFFFFF;
+    uint256[98] ______gap;
 
     function loadGame(uint256 _game) private view  returns (Game memory){
         Game memory currentGame = games[_game];
@@ -97,6 +98,7 @@ contract TicTacToeV2 is Initializable, OwnableUpgradeable, MulticallUpgradeable,
         require(gameState(currentGame.gameSetup) == GameState.InProgress, "This game is not in progress.");
         bool p1Turn = player1Turn(currentGame.gameSetup);
         require((p1Turn && currentGame.P1 == msg.sender) || (!p1Turn && currentGame.P2 == msg.sender), "You are either not part of the game or it is not your turn.");
+        require(getBlockNumber(currentGame.gameSetup) < block.number, "Only one move allowed per block.");
         uint256 playerMoveIndicator = (p1Turn ? 0 : 1);
         move = move << 1;
         require((currentGame.gameSetup & (1 << move) == 0) && ((currentGame.gameSetup & (1 << (move + 1))) == 0), "Move already played.");
@@ -161,13 +163,22 @@ contract TicTacToeV2 is Initializable, OwnableUpgradeable, MulticallUpgradeable,
         return (_gameSetup | (1 << 19)) | (1 << 20);
     }
 
+    function getBlockOffset(uint256 _gameSetup) private pure returns (uint256){
+        return (_gameSetup & (blockOffsetMask << 23)) >> 23;
+    }
+
+    function getBlockNumber(uint256 _gameSetup) private pure returns (uint256){
+        return (_gameSetup & (blockNumberMask << 44)) >> 44;
+    }
+
     event newGame(uint256 indexed _game, address _p1, address _p2);
-    function openNewGame(address _p2) public returns(uint256 gameId){
+    function openNewGame(address _p2, uint256 blockOffset) public returns(uint256 gameId){
         //require(msg.sender != _p2, "You can't invite yourself to play");
 
         bool p1O = (uint256(keccak256(abi.encodePacked(msg.sender, _p2))) & 1) == 0;    
         uint256 emptyGame = (1 << 22); 
-        Game memory g = Game(p1O ? emptyGame | (1 << 18) : emptyGame , msg.sender, _p2);
+        uint256 setup = p1O ? emptyGame | (1 << 18) : emptyGame;
+        Game memory g = Game((setup | (blockOffset << 23) | (block.number << 44) ) , msg.sender, _p2);
         games[gameCounter] = g;
         gameId = gameCounter;
         emit newGame(gameId, msg.sender, _p2);
@@ -187,8 +198,22 @@ contract TicTacToeV2 is Initializable, OwnableUpgradeable, MulticallUpgradeable,
         emit playerJoined(_game);
     }
 
-    constructor() {
-        _disableInitializers();
+
+    function settleAbuse(uint256 _game) public returns(GameState) {
+        Game memory currentGame = loadGame(_game);
+        require(gameState(currentGame.gameSetup) == GameState.InProgress, "This game is not in progress.");
+        require((currentGame.P1 == msg.sender)||(currentGame.P2 == msg.sender), "You are not part of this game.");
+        bool p1Turn = player1Turn(currentGame.gameSetup);
+        if(getBlockNumber(currentGame.gameSetup) + getBlockOffset(currentGame.gameSetup) < block.number) {
+            if(p1Turn) currentGame.gameSetup = setP2Winner(currentGame.gameSetup);
+            else currentGame.gameSetup = setP1Winner(currentGame.gameSetup);
+            GameState state = gameState(currentGame.gameSetup);
+            if(state == GameState.P1Victory) emit gameFinished(_game, currentGame.P1);
+            if(state == GameState.P2Victory) emit gameFinished(_game, currentGame.P2);
+            games[_game] = currentGame;
+            return state;
+        }
+        return GameState.InProgress;
     }
 
     function initialize() initializer public {
