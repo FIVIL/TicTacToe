@@ -53,8 +53,33 @@ In order to prevent players from simply not playing their turns if they know the
 
 Imagine a scenario when the first player submits a move and then the second player submits their move in the same block, in this scenario the first player can potentially front run their own original transaction and play a more favorable move knowing the second player's move. In order to prevent such attacks, game logic makes sure that only 1 move is allowed per block for each game.
 
+### VRF (not yet implemented)
+
+In the current implementation, it is possible for first user to determine his turn before starting the game and only invite people that will result in a favorable turn for them. However using chainlink VRFs or other random number generator oracles it is possible to truly randomize turn assignment and prevent this issue.
+
 # How To Run
 
 In order to run the game and tests, you need to use **foundry**. 
 
 After cloning the repo and installing the tool, simple run ```forge build``` and ```forge test``` to see the results.
+
+
+# Security 
+
+In what follows we will discuss the security consideration and implications of the game. Considering game's simple logic and lack of external calls the security implications of threat surface of the contract can be considered fairly limited.
+
+## Threat Model
+
+To understand the potential attack surface of the contract, we first need to identify the possible attackers. In the case of this contract, the most obvious malicious actors could be the players themselves. Each player might attempt to manipulate the contract to gain an unfair advantage or break the contract altogether. Here are some potential attacks that players could attempt:
+
+- **Submitting invalid moves**: Players might try to submit illegal or invalid moves on the game board.
+- **Playing out of turn**: Players might attempt to make moves when it's not their turn.
+- **Exploiting mining time and transaction pool**: Players might try to gain insight into the other player's move by exploiting mining time and the transaction pool, and then alter their own moves accordingly.
+- **Abstaining from playing**: If a player knows the outcome of the game is not in their favor, they might refrain from making any further moves.
+- **Withdrawing excessive funds**: Players might attempt to withdraw more funds from the contract than their actual winnings.
+- **Draining contract funds**: Players might try to drain all the funds from the contract.
+- **Malicious contract upgrade**: Considering the contract's upgradability, players might attempt to upgrade the contract to a new malicious implementation of their own.
+
+
+
+
