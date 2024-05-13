@@ -53,9 +53,14 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
         return (loadGame(_game).gameSetup >> 18 & 1);
     }
 
+    function getBoard(uint256 _game) public view returns (uint256){
+        return loadGame(_game).gameSetup;
+    }
+
     function player1Turn(uint256 _gameSetup) private pure returns (bool){
         return (_gameSetup >> 18 & 1) == 0;
     }
+
     // 21 20 19
     // 0  0  0 => open
     // 1  0  0 => In progress
@@ -76,6 +81,8 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
         }
     }
 
+    event moved(uint256 _game, uint8 _x, uint8 _y, bool _p1,GameState result);
+    event gameFinished(uint256 _game, address _winner);
     function Move(uint256 _game, uint8 _x, uint8 _y) public returns (GameState) {
         uint256 move = _y * 3 + _x;  
         require(_x < 3, "Invalid Move.");
@@ -112,23 +119,30 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
         }
         GameState state = gameState(currentGame.gameSetup);
         if(state != GameState.InProgress){
+            emit moved(_game,_x,_y, p1Turn, state);
             games[_game] = currentGame;
             return state;
-        } 
+        } else {
+            if(state == GameState.P1Victory) emit gameFinished(_game, currentGame.P1);
+            if(state == GameState.P2Victory) emit gameFinished(_game, currentGame.P2);
+        }
         uint256 gameSetup = currentGame.gameSetup;
         unchecked {
             for(uint256  i= 0; i<9; ++i){
                 //get only the last two digit 3 => 11
                 if((gameSetup & 3) == 0) {
                     games[_game] = currentGame;
+                    emit moved(_game,_x,_y, p1Turn, state);
                     return state;
                 }
                 gameSetup = gameSetup >> 2;
             }
         }
-        currentGame.gameSetup = setDraw(currentGame.gameSetup);
 
+        currentGame.gameSetup = setDraw(currentGame.gameSetup);
+        emit gameFinished(_game, address(0));
         games[_game] = currentGame;
+        emit moved(_game,_x,_y, p1Turn, state);
         return GameState.Draw;
     }
 
@@ -144,39 +158,38 @@ contract TicTacToe is Initializable, OwnableUpgradeable, MulticallUpgradeable, U
         return (_gameSetup | (1 << 19)) | (1 << 20);
     }
 
-
-    function openNewGame(address _p2) public returns(uint256){
+    event newGame(uint256 _game, address _p1, address _p2);
+    function openNewGame(address _p2) public returns(uint256 gameId){
         //require(msg.sender != _p2, "You can't invite yourself to play");
 
         bool p1O = (uint256(keccak256(abi.encodePacked(msg.sender, _p2))) & 1) == 0;    
         uint256 emptyGame = (1 << 22); 
         Game memory g = Game(p1O ? emptyGame | (1 << 18) : emptyGame , msg.sender, _p2);
         games[gameCounter] = g;
+        gameId = gameCounter;
+        emit newGame(gameId, msg.sender, _p2);
         unchecked {
             gameCounter = gameCounter + 1;
         }
-        return gameCounter - 1;
+        
     }
 
-    
+    event playerJoined(uint256 _game);
     function acceptInvite(uint256 _game) public{
         Game memory currentGame = loadGame(_game);
         require(currentGame.P2 == msg.sender,"You can't join this game");
         require(gameState(currentGame.gameSetup) == GameState.Open,"This game does not accept new players at this time");
         currentGame.gameSetup = currentGame.gameSetup | (1 << 21);
         games[_game] = currentGame;
-    }
-
-    function getBoard(uint256 _game) public view returns (uint256){
-        return loadGame(_game).gameSetup;
+        emit playerJoined(_game);
     }
 
     constructor() {
         _disableInitializers();
     }
 
-    function initialize(address initialOwner) initializer public {
-        __Ownable_init(initialOwner);
+    function initialize() initializer public {
+        __Ownable_init(msg.sender);
         __Multicall_init();
         __UUPSUpgradeable_init();
     }
