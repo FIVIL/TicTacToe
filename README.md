@@ -130,3 +130,15 @@ We have provided 23 different unit tests for this contract to achieve 81% test c
 | src/TicTacToe.sol   | 98.72% (77/78)   | 90.15% (119/132) | 80.30% (53/66)   | 85.71% (12/14) |
 | src/TicTacToeV2.sol | 72.67% (109/150) | 69.66% (163/234) | 48.18% (53/110)  | 77.27% (17/22) |
 | Total               | 81.58% (186/228) | 77.05% (282/366) | 60.23% (106/176) | 80.56% (29/36) |
+
+### Upgradeability
+
+Adding upgradeability can potentially increase the attack surface of the contract, specially if the developers do not know how the patterns work under the hood and what functions are involved.
+
+In order to add upgradeability to this game we have taken advantage of OpenZeppelin open source contracts using **UUPS Proxy** pattern which can reduce the gas costs by brining the upgrade functions within the implementation contact.
+
+1. **Initializer**: Upgradable contracts use initializers instead of constructors. However, considering that this is simply a function unlike constructors, it is important to make sure they are being called at the right time and only once.
+
+2. **authorizeUpgrade**: The UUPS proxy pattern calls for having this function in all the implementation contracts in order to be able to upgrade them later on. Lack of proper access control enforcement for this function can create a huge vulnerability and enable anyone to upgrade the contract to the implementation of their choosing potentially stealing everything. Also, lack of this function can remove the upgradeability functionality marking that implementation final.
+
+
