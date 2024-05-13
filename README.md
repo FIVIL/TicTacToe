@@ -12,16 +12,21 @@ In order to optimize the storage requirements of the game and reduce the gas cos
 
 ### Bit Mapping
 
-- The first 18 bits of the **gameSetup** contain the game board. A TicTacToe game board normally consists of a 3 x 3 matrix with 9 spots. In this implementation, we have assigned two bits for each spot in the matrix. Setting the first bit indicates an **X** (player 1 has marked that spot), and setting the second bit indicates an **O** (player 2 has marked that spot).
-- The 19th bit indicates the user's turn. If the bit is set, the second player should play, and if it is reset, the first player can play.
-- The next 3 bits indicate the current state of the game:
-    - **0 0 0**: The game has been created but not initialized, meaning the second player has not joined the game yet.
-    - **1 0 0**: The game is in progress with both players in the game.
-    - **1 1 0**: The game has completed, and player 1 won.
-    - **1 0 1**: The game has completed, and player 2 won.
-    - **1 1 1**: The game has completed, and neither player won (a tie).
-- The 23rd bit indicates whether the game exists or not.
-- The rest of the bits have been used in the **V2** version for representing the block offset, block number, jackpot, and whether players have withdrawn their funds from the jackpot. Many bits are still empty and can be used in later versions of the game.
+The first 18 bits of the **gameSetup** contain the game board. A TicTacToe game board normally consists of a 3 x 3 matrix with 9 spots. In this implementation, we have assigned two bits for each spot in the matrix. Setting the first bit indicates an **X** (player 1 has marked that spot), and setting the second bit indicates an **O** (player 2 has marked that spot).
+
+The 19th bit indicates the user's turn. If the bit is set, the second player should play, and if it is reset, the first player can play.
+
+The next 3 bits indicate the current state of the game:
+
+- **0 0 0**: The game has been created but not initialized, meaning the second player has not joined the game yet.
+- **1 0 0**: The game is in progress with both players in the game.
+- **1 1 0**: The game has completed, and player 1 won.
+- **1 0 1**: The game has completed, and player 2 won.
+- **1 1 1**: The game has completed, and neither player won (a tie).
+
+The 23rd bit indicates whether the game exists or not.
+
+The rest of the bits have been used in the **V2** version for representing the block offset, block number, jackpot, and whether players have withdrawn their funds from the jackpot. Many bits are still empty and can be used in later versions of the game.
 
 #### Game Play
 
