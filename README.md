@@ -81,5 +81,23 @@ To understand the potential attack surface of the contract, we first need to ide
 - **Malicious contract upgrade**: Considering the contract's upgradability, players might attempt to upgrade the contract to a new malicious implementation of their own.
 
 
+## Auditing Methodology
+
+In this section we will explore the auditing process that can be used to find this contract and other contracts vulnerabilities, the audit methodology discussed below is simply a personal methodology of the author of this work.
+
+### First Review
+The first step toward a successful audit comes from a deep understanding of the code, my personal method consists of reviewing all the provided documentations by the developers and then diving deep into the code and matching the sections of the documents with the code in order to grasp a complete understanding of the code.
+
+Taking this code as an example, the most complicated part of the code are parts of the code about bit packing and compressing all the state variables in a single **uint256** and performing various unintuitive boolean operations on top of it to store and read the states.
+
+In a scenario like this taking advantage of tools such as ```chisel``` or plain old paper and pen can be a game changer, using these tools an auditor can solve several examples and understand the usage of all binary operations at each part. 
+Consider the example below from the ```src/TicTacToeV2.sol:L184~187```. What are the purpose of shifts, why did we need to both shift to right and left in the same line and what will be the end result of bitwise and operation.
+
+```Solidity
+  function p2Withdrawed(uint256 _gameSetup) private pure returns (bool){
+        return ((_gameSetup & (1 << 185)) >> 185) == 0;
+    }
+```
+
 
 
