@@ -7,7 +7,7 @@ import {AxelarExecutable} from "axelar-gmp-sdk-solidity/contracts/executable/Axe
 import {IAxelarGateway} from "axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGateway.sol";
 import {IAxelarGasService} from "axelar-gmp-sdk-solidity/contracts/interfaces/IAxelarGasService.sol";
 
-contract TicTacToeV3git is AxelarExecutable, Ownable {
+contract TicTacToeV3 is AxelarExecutable, Ownable {
 
     address public sepoliaAddress;
     address public arbiSepoliaAddress;
