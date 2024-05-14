@@ -57,6 +57,10 @@ Imagine a scenario when the first player submits a move and then the second play
 
 In the current implementation, it is possible for first user to determine his turn before starting the game and only invite people that will result in a favorable turn for them. However using chainlink VRFs or other random number generator oracles it is possible to truly randomize turn assignment and prevent this issue.
 
+# V3
+
+The third version of the game takes advantage of the (Axelar)[https://www.axelar.network/] network to enable users play across chain. Currently Arbitrum Sepolia and Ethereum Sepolia networks are supported. In this version the game initiator can open a new game across chain and then other player can join the game from the target chain. The game allows seamless interaction between users across different chains.
+
 # How To Run
 
 In order to run the game and tests, you need to use **foundry**. 
